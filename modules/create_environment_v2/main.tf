@@ -18,10 +18,17 @@ locals {
   network_project_id = var.network_project_id != "" ? var.network_project_id : var.project_id
   subnetwork_region  = var.subnetwork_region != "" ? var.subnetwork_region : var.region
   cloud_composer_sa  = format("service-%s@cloudcomposer-accounts.iam.gserviceaccount.com", data.google_project.project.number)
+  control_plane_global_access = (
+    var.control_plane_global_access != null
+    ? (var.control_plane_global_access == true)
+    : (length(var.master_authorized_networks) > 0)
+  )
 
-  master_authorized_networks_config = length(var.master_authorized_networks) == 0 ? [] : [{
-    cidr_blocks : var.master_authorized_networks
-  }]
+  master_authorized_networks_config = (
+    length(var.master_authorized_networks) == 0
+    ? [{ cidr_blocks : [] }]
+    : [{ cidr_blocks : var.master_authorized_networks }]
+  )
 }
 
 resource "google_composer_environment" "composer_env" {
@@ -136,7 +143,7 @@ resource "google_composer_environment" "composer_env" {
     dynamic "master_authorized_networks_config" {
       for_each = local.master_authorized_networks_config
       content {
-        enabled = length(var.master_authorized_networks) > 0
+        enabled = local.control_plane_global_access
         dynamic "cidr_blocks" {
           for_each = master_authorized_networks_config.value["cidr_blocks"]
           content {
@@ -149,5 +156,4 @@ resource "google_composer_environment" "composer_env" {
   }
 
   depends_on = [google_project_iam_member.composer_agent_service_account]
-
 }

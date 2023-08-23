@@ -243,3 +243,14 @@ variable "grant_sa_agent_permission" {
   default     = true
   description = "Cloud Composer relies on Workload Identity as Google API authentication mechanism for Airflow. "
 }
+
+variable "control_plane_global_access" {
+  type        = any
+  default     = null
+  description = "Whether or not control plane global access is enabled. Default (null) is true when master_authorized_networks are provided and false otherwise."
+
+  validation {
+    condition     = var.control_plane_global_access == null || var.control_plane_global_access == true || var.control_plane_global_access == false
+    error_message = "control_plane_global_access must be true, false, or null."
+  }
+}
