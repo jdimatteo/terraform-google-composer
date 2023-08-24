@@ -236,13 +236,6 @@ variable "master_authorized_networks" {
   }))
   default     = []
   description = "List of master authorized networks. If none are provided, disallow external access (except the cluster node IPs, which GKE automatically whitelists)."
-
-  validation {
-    condition = (
-      local.control_plane_global_access == true ||
-      (local.control_plane_global_access == false && length(var.master_authorized_networks) == 0)
-    )
-  }
 }
 
 variable "grant_sa_agent_permission" {
@@ -271,13 +264,7 @@ variable "control_plane_authorized_networks" {
     condition = (
       var.control_plane_authorized_networks == null ||
       var.control_plane_authorized_networks == false ||
-      (
-        var.control_plane_authorized_networks == true &&
-        (
-          var.control_plane_global_access == true ||
-          length(var.master_authorized_networks) > 0
-        )
-      )
+      var.control_plane_authorized_networks == true
     )
     error_message = "control_plane_authorized_networks must be true, false, or null."
   }
