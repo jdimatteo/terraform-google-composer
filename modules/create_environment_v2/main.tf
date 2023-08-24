@@ -24,10 +24,16 @@ locals {
     : (length(var.master_authorized_networks) > 0)
   )
 
+  control_plane_authorized_networks = (
+    var.control_plane_authorized_networks != null
+    ? (var.control_plane_authorized_networks == true)
+    : (length(var.master_authorized_networks) > 0)
+  )
+
   master_authorized_networks_config = (
-    length(var.master_authorized_networks) == 0
-    ? [{ cidr_blocks : [] }]
-    : [{ cidr_blocks : var.master_authorized_networks }]
+    local.control_plane_global_access == true || length(var.master_authorized_networks) > 0
+    ? [{ cidr_blocks : var.master_authorized_networks }]
+    : []
   )
 }
 
@@ -143,7 +149,7 @@ resource "google_composer_environment" "composer_env" {
     dynamic "master_authorized_networks_config" {
       for_each = local.master_authorized_networks_config
       content {
-        enabled = local.control_plane_global_access
+        enabled = local.control_plane_authorized_networks
         dynamic "cidr_blocks" {
           for_each = master_authorized_networks_config.value["cidr_blocks"]
           content {
